@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Academic Performance & Placement Predictor | Data Science Project</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Machine learning model predicting student placement based on academic performance">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: var(--dark);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-brand i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%232563eb" opacity="0.1"><path d="M30,10 Q50,5 70,10 T90,30 Q95,50 90,70 T70,90 Q50,95 30,90 T10,70 Q5,50 10,30 T30,10"></path></svg>') no-repeat;
+            background-size: contain;
+        }
+
+        .predictor-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+            margin: 2rem 0;
+        }
+
+        .predictor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .card-header h2 {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-header p {
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+        }
+
+        .form-label i {
+            margin-right: 8px;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .input-group-text {
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            font-weight: 600;
+        }
+
+        .btn-predict {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            padding: 1rem;
+            border-radius: 10px;
+            border: none;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 100%;
+        }
+
+        .btn-predict:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .result-card {
+            border-left: 5px solid var(--primary);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 2rem;
+            padding: 1.5rem;
+        }
+
+        .result-success {
+            border-left-color: var(--success);
+            background-color: rgba(16, 185, 129, 0.05);
+        }
+
+        .result-warning {
+            border-left-color: var(--warning);
+            background-color: rgba(245, 158, 11, 0.05);
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .confidence-meter {
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .confidence-level {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--primary));
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .feature-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .feature-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .feature-icon.iq {
+            background-color: #6366f1;
+        }
+
+        .feature-icon.cgpa {
+            background-color: #ec4899;
+        }
+
+        .feature-icon.marks {
+            background-color: #f59e0b;
+        }
+
+        .feature-icon.communication {
+            background-color: #10b981;
+        }
+
+        .tech-stack {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 3rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .tech-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .tech-icon {
+            width: 40px;
+            height: 40px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: var(--primary);
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 3rem 0;
+            margin-top: 5rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 2rem 1.5rem;
+            }
+            
+            .feature-card {
+                padding: 1rem;
+            }
+        }
+
+        /* Professional Image Styling - 30% Smaller Version */
+        .col-lg-6.d-none.d-lg-block {
+            position: relative;
+            padding: 14px;
+            margin: 0 auto;
+            border-radius: 16px;
+            background: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1;
+            animation: softAppear 0.8s ease-out both;
+            width: 70%;
+            max-width: 500px;
+        }
+
+        .col-lg-6.d-none.d-lg-block img.img-fluid {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            transform: scale(0.7);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) contrast(1.05) saturate(1.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            will-change: transform;
+            backface-visibility: hidden;
+            animation: gentleFloat 8s ease-in-out infinite both;
+            animation-delay: 1s;
+        }
+
+        /* Hover Effects */
+        .col-lg-6.d-none.d-lg-block:hover {
+            transform: translateY(-5px) scale(0.98);
+            box-shadow: 0 7px 14px rgba(0, 0, 0, 0.1), 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .col-lg-6.d-none.d-lg-block:hover img.img-fluid {
+            transform: scale(0.72);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15)) contrast(1.08) saturate(1.2);
+        }
+
+        /* Animations */
+        @keyframes gentleFloat {
+            0%, 100% { transform: scale(0.7) translateY(0) rotate(0.5deg); }
+            50% { transform: scale(0.7) translateY(-6px) rotate(-0.5deg); }
+        }
+
+        @keyframes softAppear {
+            from { opacity: 0; transform: translateY(10px) scale(0.68); }
+            to { opacity: 1; transform: translateY(0) scale(0.7); }
+        }
+
+        /* Gradient Border Effect */
+        .col-lg-6.d-none.d-lg-block::after {
+            content: "";
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: linear-gradient(45deg, rgba(59, 130, 246, 0.3) 0%, rgba(16, 185, 129, 0.2) 50%, rgba(99, 102, 241, 0.3) 100%);
+            background-size: 200% 200%;
+            z-index: -1;
+            border-radius: 17px;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        .col-lg-6.d-none.d-lg-block:hover::after {
+            opacity: 1;
+            animation: gradientFlow 4s ease infinite;
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 992px) {
+            .col-lg-6.d-none.d-lg-block {
+                width: 65%;
+                padding: 10px;
+            }
+            .col-lg-6.d-none.d-lg-block img.img-fluid {
+                transform: scale(0.65);
+            }
+            @keyframes gentleFloat {
+                0%, 100% { transform: scale(0.65) translateY(0) rotate(0.5deg); }
+                50% { transform: scale(0.65) translateY(-4px) rotate(-0.5deg); }
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-graduation-cap"></i>
+                <span>PlacementPredict Pro</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#model">Model</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#demo">Demo</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="hero animate__animated animate__fadeIn">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-5 fw-bold mb-3">Student Placement Prediction</h1>
+                    <p class="lead mb-4"><b>Machine learning model that predicts student employability based on academic performance and cognitive metrics with 87% accuracy</b></p>
+                    <a href="#predictor" class="btn btn-primary btn-lg px-4">Try Predictor <i class="fas fa-arrow-down ms-2"></i></a>
+                </div>
+                <div class="col-lg-6 d-none d-lg-block">
+                    <img src="{{ url_for('static', filename='images/Picture.jpeg') }}" alt="Student Illustration" class="img-fluid">
+                </div>
+            </div>
+        </div>
+
+        <div id="predictor" class="predictor-card">
+            <div class="card-header">
+                <h2><i class="fas fa-calculator"></i> Placement Predictor</h2>
+                <p>Enter student details to predict placement probability</p>
+            </div>
+            <div class="card-body p-4">
+                <form id="predictionForm" action="/predict" method="post">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label for="IQ" class="form-label"><i class="fas fa-brain"></i> Cognitive Ability (IQ)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="IQ" name="IQ" min="70" max="160" required>
+                                <span class="input-group-text">IQ</span>
+                            </div>
+                            <div class="form-text text-muted">Standard range: 85-115</div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label for="CGPA" class="form-label"><i class="fas fa-chart-line"></i> Academic Performance</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" class="form-control" id="CGPA" name="CGPA" min="0" max="10" required>
+                                <span class="input-group-text">CGPA</span>
+                            </div>
+                            <div class="form-text text-muted">On 10.0 scale</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label for="10th_Marks" class="form-label"><i class="fas fa-award"></i> 10th Standard</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="10th_Marks" name="10th_Marks" min="0" max="100" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label for="12th_Marks" class="form-label"><i class="fas fa-award"></i> 12th Standard</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="12th_Marks" name="12th_Marks" min="0" max="100" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="Communication_Skills" class="form-label"><i class="fas fa-comments"></i> Communication Skills</label>
+                        <div class="input-group">
+                            <input type="number" step="0.1" class="form-control" id="Communication_Skills" name="Communication_Skills" min="0" max="10" required>
+                            <span class="input-group-text">/10</span>
+                        </div>
+                        <div class="form-text text-muted">Self-assessment scale</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-predict mt-2">
+                        <span id="submitText">Analyze Placement Potential</span>
+                        <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none ms-2"></span>
+                    </button>
+                </form>
+                
+                {% if prediction_text %}
+                <div class="result-card animate__animated animate__fadeIn {% if prediction == 1 %}result-success{% else %}result-warning{% endif %}">
+                    <div class="result-header">
+                        <h3 class="mb-0">
+                            {% if prediction == 1 %}
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            {% endif %}
+                            Prediction Result
+                        </h3>
+                        <span class="badge bg-{% if prediction == 1 %}success{% else %}warning{% endif %} py-2 px-3">
+                            {% if prediction == 1 %}High Potential{% else %}Needs Improvement{% endif %}
+                        </span>
+                    </div>
+                    
+                    <p class="lead">{{ prediction_text }}</p>
+                    
+                    <div class="confidence-meter">
+                        <div class="confidence-level" style="width: {{ prediction_prob|default(1) }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small>0%</small>
+                        <small>Confidence: {{ prediction_prob|default(1)|round(1) }}%</small>
+                        <small>100%</small>
+                    </div>
+                    
+                    <h4 class="mt-4 mb-3">Student Profile Analysis</h4>
+                    <div class="row">
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="feature-card">
+                                <div class="feature-icon iq">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div class="feature-label">Cognitive Ability</div>
+                                <div class="feature-value">{{ input_summary['IQ'] }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="feature-card">
+                                <div class="feature-icon cgpa">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="feature-label">CGPA</div>
+                                <div class="feature-value">{{ input_summary['CGPA'] }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="feature-card">
+                                <div class="feature-icon marks">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <div class="feature-label">Board Marks</div>
+                                <div class="feature-value">{{ ((input_summary['10th Marks'] + input_summary['12th Marks'])/2)|round(1) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="feature-card">
+                                <div class="feature-icon communication">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div class="feature-label">Communication</div>
+                                <div class="feature-value">{{ input_summary['Communication Skills'] }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h5><i class="fas fa-lightbulb me-2"></i>Recommendations</h5>
+                        <ul class="list-group list-group-flush">
+                            {% set confidence = prediction_prob|default(1)|round(1) %}
+                            {% if prediction == 1 %}
+                                {% if confidence >= 95 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Exceptional candidate for elite company placements</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Pursue advanced technical roles and leadership programs</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Network with industry leaders for mentorship</li>
+                                {% elif confidence >= 90 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Strong candidate for top-tier campus recruitment</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Prepare for high-level technical interviews</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Consider specialized training programs</li>
+                                {% elif confidence >= 85 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Well-suited for competitive placement drives</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Enhance skills with advanced coursework</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Build a strong professional portfolio</li>
+                                {% elif confidence >= 80 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Good potential for campus placements</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Focus on technical interview preparation</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Engage in industry-relevant projects</li>
+                                {% elif confidence >= 75 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Promising candidate for recruitment drives</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Strengthen resume with internships</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Participate in career fairs</li>
+                                {% elif confidence >= 70 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Suitable for mid-tier placement opportunities</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Prepare with basic technical skills</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Attend skill-building workshops</li>
+                                {% else %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Potential for entry-level placements</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Focus on resume development</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Explore local job opportunities</li>
+                                {% endif %}
+                            {% else %}
+                                {% if confidence >= 65 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Improve technical skills with hands-on projects</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Practice communication through mock interviews</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Pursue relevant certifications to boost profile</li>
+                                {% elif confidence >= 60 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Focus on building a stronger academic foundation</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Join communication workshops for improvement</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Gain practical experience through internships</li>
+                                {% elif confidence >= 55 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Enhance core subject knowledge with online courses</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Develop soft skills via group activities</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Seek mentorship for career guidance</li>
+                                {% elif confidence >= 50 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Strengthen fundamentals through study groups</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Practice public speaking to boost confidence</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Explore entry-level certifications</li>
+                                {% elif confidence >= 45 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Prioritize academic improvement with tutoring</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Engage in extracurriculars to build skills</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Attend career counseling sessions</li>
+                                {% elif confidence >= 40 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Focus on consistent academic progress</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Join communication skill-building programs</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Participate in skill-based workshops</li>
+                                {% elif confidence >= 35 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Build foundational knowledge with online learning</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Practice basic communication skills daily</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Explore volunteer opportunities for experience</li>
+                                {% elif confidence >= 30 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Focus on improving weak academic areas</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Develop teamwork skills through group projects</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Seek guidance from academic advisors</li>
+                                {% elif confidence >= 25 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Strengthen basics with remedial classes</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Practice communication in low-pressure settings</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Build a basic resume with guidance</li>
+                                {% elif confidence >= 20 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Focus on core subject revision</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Join beginner-level communication classes</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Explore basic skill development courses</li>
+                                {% elif confidence >= 15 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Start with foundational academic improvement</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Practice basic interpersonal skills</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Seek peer support for learning</li>
+                                {% elif confidence >= 10 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Begin with basic study habits</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Engage in simple communication exercises</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Explore introductory career workshops</li>
+                                {% elif confidence >= 5 %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Establish consistent study routines</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Practice basic conversational skills</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Attend introductory career seminars</li>
+                                {% else %}
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Focus on building study discipline</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Develop basic communication confidence</li>
+                                    <li class="list-group-item bg-transparent"><i class="fas fa-arrow-up text-warning me-2"></i> Explore free online learning resources</li>
+                                {% endif %}
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="model" class="tech-stack">
+            <h2 class="text-center mb-4"><i class="fas fa-microchip me-2"></i>Model Architecture</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Random Forest Classifier</h5>
+                            <p class="text-muted mb-0">Ensemble learning method with 100 decision trees</p>
+                        </div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Hyperparameter Tuning</h5>
+                            <p class="text-muted mb-0">GridSearchCV for optimal parameters</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Model Performance</h5>
+                            <p class="text-muted mb-0">87% accuracy on test data</p>
+                        </div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-weight"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Feature Importance</h5>
+                            <p class="text-muted mb-0">CGPA and Communication most significant</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container text-center">
+            <h3 class="mb-4">Academic Placement Predictor</h3>
+            <p class="mb-4">Data Science Project demonstrating end-to-end machine learning implementation</p>
+            <div class="d-flex justify-content-center gap-3 mb-4">
+                <a href="#" class="text-white"><i class="fab fa-github fa-2x"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-linkedin fa-2x"></i></a>
+                <a href="#" class="text-white"><i class="fab fa-twitter fa-2x"></i></a>
+            </div>
+            <p class="mb-0">© 2023 Data Science Project. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            const iq = parseFloat(document.getElementById('IQ').value) || 0;
+            const cgpa = parseFloat(document.getElementById('CGPA').value) || 0;
+            const tenthMarks = parseFloat(document.getElementById('10th_Marks').value) || 0;
+            const twelfthMarks = parseFloat(document.getElementById('12th_Marks').value) || 0;
+            const communicationSkills = parseFloat(document.getElementById('Communication_Skills').value) || 0;
+
+            // Ensure confidence is not zero unless all inputs are zero
+            if (iq === 0 && cgpa === 0 && tenthMarks === 0 && twelfthMarks === 0 && communicationSkills === 0) {
+                document.querySelector('.confidence-level').style.width = '0%';
+            } else {
+                const meter = document.querySelector('.confidence-level');
+                const confidence = parseFloat("{{ prediction_prob|default(1) }}") || 1;
+                if (meter) {
+                    meter.style.width = Math.max(confidence, 1) + '%';
+                }
+            }
+
+            const submitBtn = document.getElementById('submitText');
+            const spinner = document.getElementById('loadingSpinner');
+            submitBtn.textContent = 'Analyzing...';
+            spinner.classList.remove('d-none');
+
+            // Animate confidence meter
+            setTimeout(() => {
+                const meter = document.querySelector('.confidence-level');
+                if (meter) {
+                    const confidence = parseFloat("{{ prediction_prob|default(1) }}") || 1;
+                    meter.style.width = Math.max(confidence, 1) + '%';
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
